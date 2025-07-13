@@ -3,16 +3,20 @@ import requests
 
 app = Flask(__name__)
 
-def geocode_city(city_name):
+def geocode_city(city_name, country=None):
     url = "https://nominatim.openstreetmap.org/search"
     params = {
         "q": city_name,
         "format": "json",
         "limit": 1
     }
+    if country:
+        params["countrycodes"] = country.lower()  
+
     headers = {
-        "User-Agent": "ConiShadowWeatherProxy/1.0 (conishadoww@gmail.com)"
+        "User-Agent": "iOS6WeatherProxy/1.0 (your.email@example.com)"
     }
+
     try:
         resp = requests.get(url, params=params, headers=headers, timeout=5)
         data = resp.json()
@@ -21,6 +25,7 @@ def geocode_city(city_name):
     except Exception:
         pass
     return None, None
+
 
 def get_condition_text(code):
     conditions = {
@@ -60,9 +65,10 @@ def get_weather():
     city = request.args.get("city", "").strip()
     lat = request.args.get("lat")
     lon = request.args.get("lon")
+    country = request.args.get("country", "").strip()
 
     if city:
-        lat, lon = geocode_city(city)
+        lat, lon = geocode_city(city, country)
         if lat is None or lon is None:
             return jsonify({"error": f"City '{city}' not found"}), 404
     elif lat and lon:
