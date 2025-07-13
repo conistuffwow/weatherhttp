@@ -11,7 +11,7 @@ def geocode_city(city_name):
         "limit": 1
     }
     headers = {
-        "User-Agent": "iOS6WeatherProxy/1.0 (your.email@example.com)"
+        "User-Agent": "ConiShadowWeatherProxy/1.0 (conishadoww@gmail.com)"
     }
     try:
         resp = requests.get(url, params=params, headers=headers, timeout=5)
@@ -21,6 +21,39 @@ def geocode_city(city_name):
     except Exception:
         pass
     return None, None
+
+def get_condition_text(code):
+    conditions = {
+        0: "Clear",
+        1: "Mostly Clear",
+        2: "Partly Cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Rime Fog",
+        51: "Light Drizzle",
+        53: "Moderate Drizzle",
+        55: "Heavy Drizzle",
+        56: "Light Freezing Drizzle",
+        57: "Heavy Freezing Drizzle",
+        61: "Light Rain",
+        63: "Moderate Rain",
+        65: "Heavy Rain",
+        66: "Light Freezing Rain",
+        67: "Heavy Freezing Rain",
+        71: "Light Snow",
+        73: "Moderate Snow",
+        75: "Heavy Snow",
+        77: "Snow Grains",
+        80: "Light Rain Showers",
+        81: "Moderate Rain Showers",
+        82: "Violent Rain Showers",
+        85: "Light Snow Showers",
+        86: "Heavy Snow Showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with Light Hail",
+        99: "Thunderstorm with Heavy Hail",
+    }
+    return conditions.get(code, "Unknown")
 
 @app.route('/weather')
 def get_weather():
@@ -39,7 +72,7 @@ def get_weather():
         except ValueError:
             return jsonify({"error": "Invalid latitude or longitude"}), 400
     else:
-        return jsonify({"error": "Please provide 'city' or 'lat' and 'lon' parameters"}), 400
+        return jsonify({"error": "Please provide 'city' or 'lat' and 'lon'"}), 400
 
     try:
         url = (
@@ -50,13 +83,18 @@ def get_weather():
         data = response.json()
         weather = data.get("current_weather", {})
 
+        condition_code = weather.get("weathercode")
+        condition_text = get_condition_text(condition_code)
+
         result = {
             "temp_c": weather.get("temperature"),
             "windspeed_kph": round(weather.get("windspeed", 0) * 1.60934, 1),
-            "condition_code": weather.get("weathercode"),
+            "condition_code": condition_code,
+            "condition_text": condition_text,
             "time": weather.get("time"),
             "location": city if city else f"{lat},{lon}"
         }
+
         return jsonify(result)
 
     except Exception as e:
